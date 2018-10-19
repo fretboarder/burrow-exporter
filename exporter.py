@@ -5,9 +5,9 @@ import prometheus_client as pc
 PROGRAM = "burrow-exporter"
 
 BURROW_POLLING_INTERVAL = os.getenv('POLLING_INTERVAL', default=5)
-METRICS_PORT = os.getenv("METRICS_PORT", default=3000)
+METRICS_PORT = int(os.getenv("METRICS_PORT", default=3000))
 BURROW_HOST = os.getenv("BURROW_HOST", default="localhost")
-BURROW_PORT = os.getenv("BURROW_PORT", default=8000)
+BURROW_PORT = int(os.getenv("BURROW_PORT", default=8000))
 BURROW_ENDPOINT = F"http://{BURROW_HOST}:{BURROW_PORT}"
 
 def log(*args):
