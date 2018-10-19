@@ -15,5 +15,11 @@ Written in Python. From Austria.
 
 ## Docker
 
+### Use pre-build imaged from Quay
+
+    $ docker run -d p 3000:3000 quay.io/fretboarder/burrow-exporter
+
+### ... or build it by yourself
+
     $ docker build -t burrow-exporter .
     $ docker run -d -p 3000:3000 burrow-exporter
