@@ -12,6 +12,8 @@ Written in Python. From Austria.
 ### METRICS_PORT (default = 3000)
 ### BURROW_HOST (default = "localhost")
 ### BURROW_PORT (default = 8000)
+### ADD_ENV_LABELS (default = "")
+Colon-separated list of environment variables that shall be used as labels on a metric
 
 ## Docker
 

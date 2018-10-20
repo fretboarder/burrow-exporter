@@ -1,0 +1,8 @@
+kafka-console-consumer.sh --topic test-topic --bootstrap-server $(broker-list.sh ) --from-beginning --group GG11
+kafka-console-producer.sh --topic test-topic --broker-list $(broker-list.sh )
+
+
+
+
+while true; do echo $(( RANDOM ))| kafka-console-producer.sh --topic test-topic --broker-list $(broker-list.sh ); sleep 1; done
+
