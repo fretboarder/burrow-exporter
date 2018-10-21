@@ -39,7 +39,7 @@ Colon-separated list of environment variables that shall be used as labels on a 
 
 The latest version is available via quay.io/fretboarder/kafka-lag-exporter
 
-### Use pre-build imaged from Quay
+### Use pre-built imaged from Quay
 
     $ docker run -d -p 3000:3000 quay.io/fretboarder/kafka-lag-exporter
 
