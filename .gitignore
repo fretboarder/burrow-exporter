@@ -1,3 +1,5 @@
 .vscode/
+__pycache__/
+tests/
 *.code-workspace
 kafka-commands.txt

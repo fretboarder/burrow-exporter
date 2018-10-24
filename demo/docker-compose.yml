@@ -1,0 +1,81 @@
+version: "2"
+
+volumes:
+  kafka:
+  zookeeper:
+
+services:
+  zookeeper:
+    image: wurstmeister/zookeeper
+    volumes:
+      - zookeeper:/opt/zookeeper-3.4.9/data
+    ports:
+      - 2181:2181
+
+  kafka:
+    image: wurstmeister/kafka
+    volumes:
+      - kafka:/kafka
+    ports:
+      - 9092:9092
+    environment:
+      KAFKA_ZOOKEEPER_CONNECT: zookeeper:2181
+      KAFKA_ADVERTISED_HOST_NAME: kafka
+      KAFKA_ADVERTISED_PORT: 9092
+      KAFKA_CREATE_TOPICS: "test-topic1:2:1,test-topic2:1:1,test-topic3:1:1"
+      ZK: zookeeper:2181
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+
+  remora:
+    image: registry.opensource.zalan.do/machina/remora
+    depends_on:
+      - kafka
+    ports:
+      - 9000:9000
+    environment:
+      KAFKA_ENDPOINT: kafka:9092
+
+  remora-exporter:
+    image: quay.io/fretboarder/kafka-lag-exporter
+    environment: 
+      LAG_BACKEND_TYPE: remora
+      REMORA_HOST: remora
+      REMORA_PORT: 9000
+    ports:
+      - 3000:3000
+    depends_on:
+      - remora
+
+  # burrow:
+  #   image: quay.io/fretboarder/burrow
+  #   volumes:
+  #     - ${PWD}/burrow-config:/etc/burrow/
+  #     - ${PWD}/burrow-tmp:/var/tmp/burrow
+  #   ports:
+  #     - 8000:8000
+  #   depends_on:
+  #     - zookeeper
+  #     - kafka
+  #   restart: always
+
+  # burrow-exporter:
+  #   image: quay.io/fretboarder/kafka-lag-exporter
+  #   environment: 
+  #     LAG_BACKEND_TYPE: burrow
+  #     BURROW_HOST: burrow
+  #     BURROW_PORT: 8000
+  #   ports:
+  #     - 4000:3000
+  #   depends_on:
+  #     - burrow
+
+
+  prometheus:
+    image: prom/prometheus
+    ports:
+      - 9090:9090
+    volumes:
+      - ${PWD}/prometheus-config/prometheus.yml:/etc/prometheus/prometheus.yml
+  
+    
