@@ -9,7 +9,7 @@ def init_environment():
     """ Initializes the environment """
     env_vars = [
         ( "LAG_POLLING_INTERVAL", 5 ),
-        ( "LAG_BACKEND_TYPE", "burrow" ),
+        ( "LAG_BACKEND_TYPE", "remora" ),
         ( "METRICS_PORT", 3000 ),
         ( "LOG_LEVEL", "INFO" ),
         ( "ADD_ENV_LABELS", ""),
@@ -48,7 +48,13 @@ def url_loader(get_path):
 ##############################
 @url_loader
 def burrow_topics(cluster, consumer):
-    topic_transform = lambda body: [ { 'topicName' : k, 'stats': body[k] } for k in body ]
+    topic_transform = lambda topics: [ { 
+        'topicName' : t, 
+        'stats': [{ 
+            'partition': i, 
+            'current-lag': topics[t][i]['current-lag'] 
+             } for i in range(len(topics[t]))] 
+        } for t in topics ]
     return (F"v3/kafka/{cluster}/consumer/{consumer}", topic_transform, "topics")
 
 ##############################
@@ -73,8 +79,8 @@ def remora_consumers(cluster=None):
 ##############################
 @url_loader
 def remora_topics(cluster, consumer):
-    topic_transform = lambda body: [ { 'topicName' : k, 'stats': [{'current-lag':body[k]}] } for k in body ]
-    return (F"consumers/{consumer}", topic_transform, 'lag_per_topic')
+    topic_transform = lambda assignment: [ { 'topicName' : pa['topic'], 'stats': [{'partition':pa['partition'], 'current-lag': pa['lag']}] }  for pa in assignment ]
+    return (F"consumers/{consumer}", topic_transform, 'partition_assignment')
 
 topics = lambda cl,co: remora_topics(cl,co) if env['LAG_BACKEND_TYPE'] == "remora" else burrow_topics(cl,co)
 consumers = lambda c: remora_consumers(c) if env['LAG_BACKEND_TYPE'] == "remora" else burrow_consumers(c)
@@ -88,9 +94,9 @@ def map_env_labels(labels):
 metrics = {}
 def init_prometheus():
     """ Initializes prometheus """
-    metric_labels = ['cluster','consumer','topic'] + [ l for l in env['ADD_ENV_LABELS'].split(":") if len(l) ]
+    metric_labels = ['cluster','consumer','topic','partition'] + [ l for l in env['ADD_ENV_LABELS'].split(":") if len(l) ]
     logI(F"labels: {metric_labels}")
-    metrics['lags'] = pc.Gauge('kafka_consumer_current_lag', 'Kafka Consumer Lag', metric_labels)
+    metrics['lags'] = pc.Gauge('kafka_consumer_lag', 'Kafka Consumer Lag', metric_labels)
     pc.start_http_server(int(env['METRICS_PORT']))
 
 ##############################
@@ -122,7 +128,7 @@ def request_lags():
     
     # Create a dictionary of metric names as keys and current lags as values
     metric_string_dict = {
-        F"{i['clusterName']}@{c['consumerName']}@{t['topicName']}" : int(s['current-lag'])
+        F"{i['clusterName']}@{c['consumerName']}@{t['topicName']}@{s['partition']}" : int(s['current-lag'])
             for i in consumer_info
             for c in i['consumers']
             for t in c['topics']
